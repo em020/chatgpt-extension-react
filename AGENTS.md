@@ -7,7 +7,7 @@
 - UI components live in `src/components/` (shared UI in `src/components/ui`).
 - Utilities and helpers live in `src/lib/`.
 - Styles are in `src/styles/` and `src/index.css` / `src/App.css`.
-- Static assets are in `src/assets/` and `public/` (extension icons in `public/icons/`).
+- Static assets are in `src/assets/` and `public/` (extension icons in `public/icons/` as PNGs).
 - Extension manifest is `public/manifest.json`.
 
 ## Build, Test, and Development Commands
@@ -31,10 +31,11 @@
 - If you add tests, also add an npm script and document the framework choice.
 
 ## Commit & Pull Request Guidelines
-- Git history only includes a single `init` commit, so no convention is established.
+- No strict commit convention is enforced yet.
 - Recommended: short, imperative commit messages (e.g., `add popup layout`).
 - PRs should include a summary, testing notes (or “not run”), and screenshots for UI changes.
 
 ## Extension Notes
 - The extension UI is defined in `popup.html` and `src/popup.tsx`.
+- Chrome extension icons are configured in `public/manifest.json` and stored in `public/icons/` (`icon-16.png`, `icon-32.png`, `icon-48.png`, `icon-128.png`).
 - Keep `public/manifest.json` in sync with new permissions, scripts, or assets.
