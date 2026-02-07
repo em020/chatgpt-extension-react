@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Hello World Vue Extension",
+  "name": "chatgpt-ext-react",
   "version": "1.0.0",
   "description": "A basic Hello World Chrome extension built with Vue 3",
   "permissions": ["activeTab", "scripting"],
@@ -10,10 +10,18 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Hello World Extension",
-    "default_icon": "icons/icon.svg"
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "icons": {
-    "128": "icons/icon.svg"
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

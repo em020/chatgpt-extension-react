@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 
 type CaptureResponse =
@@ -40,6 +38,18 @@ const mockData = {
     "Can you show me how to implement automatic DOM capture?",
     "What are the best practices for Chrome extension development?",
     "How can I make my extension work with Manifest V3?",
+    "How do I set up content scripts in a Chrome extension?",
+    "What permissions do I need for reading DOM content?",
+    "How can I debounce DOM scanning for better performance?",
+    "Is it possible to capture Shadow DOM content?",
+    "How do I handle multiple tabs in an extension?",
+    "What is the best way to store user preferences?",
+    "How do I add keyboard shortcuts to an extension?",
+    "How can I style a popup with Tailwind CSS?",
+    "How do I communicate between popup and background scripts?",
+    "What are common pitfalls when migrating to Manifest V3?",
+    "How can I reduce bundle size for a Chrome extension?",
+    "How do I debug content scripts effectively?",
   ],
 }
 
@@ -156,39 +166,39 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 p-3 text-white">
-      <Card className="border-white/20 bg-white/10 backdrop-blur">
-        <CardHeader className="space-y-2">
+    <div className="min-h-full bg-background text-foreground">
+      <div className="space-y-3">
+        <div className="space-y-2 px-3 pt-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl text-white">User Messages</CardTitle>
-            <Badge className="bg-yellow-300 text-black">{matchCount} found</Badge>
+            <h1 className="text-xl font-semibold leading-none tracking-tight">User Messages</h1>
+            <Badge variant="secondary">{matchCount} found</Badge>
           </div>
-          <p className="text-sm text-white/80">
+          <p className="text-sm text-muted-foreground sr-only">
             Auto-capture runs when the popup opens.
           </p>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        </div>
+        <div className="space-y-3 px-3 pb-3">
           {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-white/90">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
               Capturing DOM...
             </div>
           )}
 
           {!isLoading && !domHtml && !error && (
-            <div className="text-sm text-yellow-200">Ready to capture</div>
+            <div className="text-sm text-muted-foreground">Ready to capture</div>
           )}
 
           {error && (
-            <Alert className="text-white">
+            <Alert>
               <AlertTitle>Capture failed</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           {domHtml && (
-            <ScrollArea className="h-64 rounded-lg border border-white/10 bg-black/20 p-2">
-              <div className="space-y-2 pr-2">
+            <div className="max-h-[calc(600px-100px)] overflow-y-auto bg-background">
+              <div className="space-y-2 p-2">
                 {matchCount > 0 ? (
                   extractedMatches.map((match, index) => (
                     <button
@@ -196,7 +206,7 @@ export default function App() {
                       type="button"
                       onClick={() => scrollToElement(match)}
                       className={cn(
-                        "w-full rounded-md bg-white/10 px-3 py-2 text-left text-sm text-white transition hover:bg-white/20",
+                        "w-full rounded-lg border border-border bg-muted/40 px-3 py-3 text-left text-sm transition hover:bg-muted/80",
                         isScrolling && "pointer-events-none opacity-60"
                       )}
                     >
@@ -204,17 +214,17 @@ export default function App() {
                     </button>
                   ))
                 ) : (
-                  <div className="rounded-md border border-white/10 bg-white/5 p-3 text-sm text-white/70">
+                  <div className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm text-muted-foreground">
                     No matches found for the specified pattern.
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           )}
 
-          <div className="pt-1 text-xs text-white/70">Built with ❤️</div>
-        </CardContent>
-      </Card>
+          <div className="pt-1 text-xs text-muted-foreground">Built with ❤️</div>
+        </div>
+      </div>
     </div>
   )
 }
