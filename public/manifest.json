@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "chatgpt-ext-react",
+  "name": "ChatGPT Prompt Navigator",
   "version": "1.0.0",
-  "description": "A basic Hello World Chrome extension built with Vue 3",
+  "description": "Capture ChatGPT user prompts from the active tab and jump back to them from the popup.",
   "permissions": ["activeTab", "scripting"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Hello World Extension",
+    "default_title": "ChatGPT Prompt Navigator",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",
