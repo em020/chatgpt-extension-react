@@ -2,74 +2,36 @@ import { useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
-
-type CaptureResponse =
-  | { success: true; html: string }
-  | { success: false; error: string }
-
-type ScrollResponse =
-  | { success: true; message?: string }
-  | { success: false; error: string }
+import {
+  type CaptureConversationResponse,
+  type ConversationMessage,
+  type ProviderSummary,
+  type ScrollToMessageResponse,
+} from "@/lib/providers"
 
 const mockData = {
-  html: `<!DOCTYPE html>
-<html>
-<head><title>ChatGPT Mock Page</title></head>
-<body>
-  <div data-message-author-role="user">
-    <div class="whitespace-pre-wrap">How do I create a Chrome extension with Vue 3?</div>
-  </div>
-  <div data-message-author-role="assistant">
-    <div class="whitespace-pre-wrap">To create a Chrome extension with Vue 3, you'll need...</div>
-  </div>
-  <div data-message-author-role="user">
-    <div class="whitespace-pre-wrap">Can you show me how to implement automatic DOM capture?</div>
-  </div>
-  <div data-message-author-role="user">
-    <div class="whitespace-pre-wrap">What are the best practices for Chrome extension development?</div>
-  </div>
-  <div data-message-author-role="user">
-    <div class="whitespace-pre-wrap">How can I make my extension work with Manifest V3?</div>
-  </div>
-</body>
-</html>`,
-  matches: [
-    "How do I create a Chrome extension with Vue 3?",
-    "Can you show me how to implement automatic DOM capture?",
-    "What are the best practices for Chrome extension development?",
-    "How can I make my extension work with Manifest V3?",
-    "How do I set up content scripts in a Chrome extension?",
-    "What permissions do I need for reading DOM content?",
-    "How can I debounce DOM scanning for better performance?",
-    "Is it possible to capture Shadow DOM content?",
-    "How do I handle multiple tabs in an extension?",
-    "What is the best way to store user preferences?",
-    "How do I add keyboard shortcuts to an extension?",
-    "How can I style a popup with Tailwind CSS?",
-    "How do I communicate between popup and background scripts?",
-    "What are common pitfalls when migrating to Manifest V3?",
-    "How can I reduce bundle size for a Chrome extension?",
-    "How do I debug content scripts effectively?",
+  provider: {
+    id: "chatgpt",
+    label: "ChatGPT",
+  } as ProviderSummary,
+  messages: [
+    { content: "How do I create a Chrome extension with React?" },
+    { content: "Can you show me how to implement automatic conversation capture?" },
+    { content: "What are the best practices for Chrome extension development?" },
+    { content: "How can I make my extension work with Manifest V3?" },
+    { content: "How do I set up content scripts in a Chrome extension?" },
+    { content: "What permissions do I need for reading conversation content?" },
+    { content: "How can I debounce DOM scanning for better performance?" },
+    { content: "Is it possible to capture Shadow DOM content?" },
+    { content: "How do I handle multiple tabs in an extension?" },
+    { content: "What is the best way to store user preferences?" },
+    { content: "How do I add keyboard shortcuts to an extension?" },
+    { content: "How can I style a popup with Tailwind CSS?" },
+    { content: "How do I communicate between popup and background scripts?" },
+    { content: "What are common pitfalls when migrating to Manifest V3?" },
+    { content: "How can I reduce bundle size for a Chrome extension?" },
+    { content: "How do I debug content scripts effectively?" },
   ],
-}
-
-function decodeHtmlEntities(text: string) {
-  const textarea = document.createElement("textarea")
-  textarea.innerHTML = text
-  return textarea.value
-}
-
-function extractMatches(htmlContent: string) {
-  const regex = /data-message-author-role="user".*?<div class="whitespace-pre-wrap">(.*?)<\/div>/gs
-  const matches: string[] = []
-  let match: RegExpExecArray | null
-
-  while ((match = regex.exec(htmlContent)) !== null) {
-    const decodedText = decodeHtmlEntities(match[1])
-    matches.push(decodedText)
-  }
-
-  return matches
 }
 
 export default function App() {
@@ -77,35 +39,34 @@ export default function App() {
     () => typeof chrome !== "undefined" && !!chrome.runtime?.id,
     []
   )
-  const [domHtml, setDomHtml] = useState("")
-  const [extractedMatches, setExtractedMatches] = useState<string[]>([])
+  const [provider, setProvider] = useState<ProviderSummary | null>(null)
+  const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isScrolling, setIsScrolling] = useState(false)
 
-  const matchCount = extractedMatches.length
+  const matchCount = messages.length
 
-  const captureDOM = async () => {
+  const captureConversation = async () => {
     setIsLoading(true)
     setError("")
-    setDomHtml("")
-    setExtractedMatches([])
+    setProvider(null)
+    setMessages([])
 
     try {
       if (isExtensionMode) {
-        const response = await new Promise<CaptureResponse>((resolve) => {
-          chrome.runtime.sendMessage({ action: "getDOMFromActiveTab" }, resolve)
+        const response = await new Promise<CaptureConversationResponse>((resolve) => {
+          chrome.runtime.sendMessage({ action: "captureConversationFromActiveTab" }, resolve)
         })
 
         if (response.success) {
-          setDomHtml(response.html)
-          const matches = extractMatches(response.html)
-          setExtractedMatches(matches)
+          setProvider(response.provider)
+          setMessages(response.messages)
         } else {
-          const errorMsg = response.error || "Failed to capture DOM"
-          if (errorMsg.includes("restricted pages")) {
+          const errorMsg = response.error || "Failed to capture conversation"
+          if (errorMsg.includes("Cannot access this page")) {
             setError(
-              "Cannot capture DOM from this page. Please navigate to a regular website (not chrome://, extension pages, etc.) and reopen the extension."
+              "Cannot access this page. Please navigate to a regular website and reopen the extension."
             )
           } else if (errorMsg.includes("No active tab")) {
             setError(
@@ -117,10 +78,8 @@ export default function App() {
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 100))
-        // Dev mode: domHtml is just used to show the list UI;
-        // matches are intentionally hardcoded and not parsed from mockData.html.
-        setDomHtml(mockData.html)
-        setExtractedMatches(mockData.matches)
+        setProvider(mockData.provider)
+        setMessages(mockData.messages)
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error"
@@ -136,9 +95,9 @@ export default function App() {
     }
   }
 
-  const scrollToElement = async (text: string) => {
+  const scrollToMessage = async (messageContent: string) => {
     if (!isExtensionMode) {
-      alert(`Would scroll to: "${text}"`)
+      alert(`Would scroll to: "${messageContent}"`)
       return
     }
 
@@ -146,14 +105,17 @@ export default function App() {
     setError("")
 
     try {
-      const response = await new Promise<ScrollResponse>((resolve) => {
-        chrome.runtime.sendMessage({ action: "scrollToElement", text }, resolve)
+      const response = await new Promise<ScrollToMessageResponse>((resolve) => {
+        chrome.runtime.sendMessage(
+          { action: "scrollToMessageOnActiveTab", messageContent },
+          resolve
+        )
       })
 
       if (response.success) {
         window.close()
       } else {
-        setError(response.error || "Failed to scroll to element")
+        setError(response.error || "Failed to scroll to message")
         setIsScrolling(false)
       }
     } catch (err) {
@@ -164,7 +126,7 @@ export default function App() {
   }
 
   useEffect(() => {
-    captureDOM()
+    captureConversation()
   }, [])
 
   return (
@@ -172,22 +134,27 @@ export default function App() {
       <div className="space-y-3">
         <div className="space-y-2 px-3 pt-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold leading-none tracking-tight">User Messages</h1>
+            <h1 className="text-xl font-semibold leading-none tracking-tight">
+              User Messages
+            </h1>
             <Badge variant="secondary">{matchCount} found</Badge>
           </div>
           <p className="text-sm text-muted-foreground sr-only">
             Auto-capture runs when the popup opens.
           </p>
+          {provider && (
+            <p className="text-xs text-muted-foreground">Source: {provider.label}</p>
+          )}
         </div>
         <div className="space-y-3 px-3 pb-3">
           {isLoading && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-              Capturing DOM...
+              Capturing conversation...
             </div>
           )}
 
-          {!isLoading && !domHtml && !error && (
+          {!isLoading && matchCount === 0 && !error && (
             <div className="text-sm text-muted-foreground">Ready to capture</div>
           )}
 
@@ -198,26 +165,26 @@ export default function App() {
             </Alert>
           )}
 
-          {domHtml && (
+          {(matchCount > 0 || provider) && (
             <div className="max-h-[calc(600px-100px)] overflow-y-auto bg-background">
               <div className="space-y-2 p-2">
                 {matchCount > 0 ? (
-                  extractedMatches.map((match, index) => (
+                  messages.map((message, index) => (
                     <button
-                      key={`${match}-${index}`}
+                      key={`${message.content}-${index}`}
                       type="button"
-                      onClick={() => scrollToElement(match)}
+                      onClick={() => scrollToMessage(message.content)}
                       className={cn(
                         "w-full rounded-lg border border-border bg-muted/40 px-3 py-3 text-left text-sm transition hover:bg-muted/80",
                         isScrolling && "pointer-events-none opacity-60"
                       )}
                     >
-                      {index + 1}. {match}
+                      {index + 1}. {message.content}
                     </button>
                   ))
                 ) : (
                   <div className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm text-muted-foreground">
-                    No matches found for the specified pattern.
+                    No user messages found for this provider.
                   </div>
                 )}
               </div>

@@ -1,40 +1,51 @@
 /// <reference types="chrome" />
 
-function captureDOM() {
-  return document.documentElement.outerHTML
-}
+import {
+  type CaptureConversationResponse,
+  type ScrollToMessageResponse,
+  resolveProviderByUrl,
+} from "@/lib/providers"
 
-function findElementByText(text: string) {
-  const chatGPTElements = document.querySelectorAll(
-    '[data-message-author-role="user"] .whitespace-pre-wrap'
-  )
-  for (const element of chatGPTElements) {
-    if (element.textContent?.trim() === text.trim()) {
-      return element
-    }
-  }
+function captureConversation(): CaptureConversationResponse {
+  try {
+    const provider = resolveProviderByUrl(window.location.href)
 
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-  const textNodes: Element[] = []
-  let node: Node | null
-
-  while ((node = walker.nextNode())) {
-    if (node.textContent?.trim() === text.trim()) {
-      if (node.parentElement) {
-        textNodes.push(node.parentElement)
+    if (!provider) {
+      return {
+        success: false,
+        error: "This page is not supported yet. Open ChatGPT and try again.",
       }
     }
-  }
 
-  return textNodes.length > 0 ? textNodes[0] : null
+    return {
+      success: true,
+      provider: {
+        id: provider.id,
+        label: provider.label,
+      },
+      messages: provider.extractMessages(document),
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    return { success: false, error: message }
+  }
 }
 
-function scrollToElement(text: string) {
+function scrollToMessage(messageContent: string): ScrollToMessageResponse {
   try {
-    const element = findElementByText(text)
+    const provider = resolveProviderByUrl(window.location.href)
+
+    if (!provider) {
+      return {
+        success: false,
+        error: "This page is not supported yet. Open ChatGPT and try again.",
+      }
+    }
+
+    const element = provider.findMessageElement(document, messageContent)
 
     if (!element) {
-      return { success: false, error: "Element not found on the page" }
+      return { success: false, error: "Message not found on the page" }
     }
 
     element.scrollIntoView({
@@ -43,7 +54,7 @@ function scrollToElement(text: string) {
       inline: "nearest",
     })
 
-    return { success: true, message: "Successfully scrolled to element" }
+    return { success: true, message: "Successfully scrolled to message" }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
     return { success: false, error: `Scroll failed: ${message}` }
@@ -53,24 +64,12 @@ function scrollToElement(text: string) {
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   void _sender
 
-  if (request.action === "captureDOM") {
-    try {
-      const domHTML = captureDOM()
-      sendResponse({ success: true, html: domHTML })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error"
-      sendResponse({ success: false, error: message })
-    }
+  if (request.action === "captureConversation") {
+    sendResponse(captureConversation())
   }
 
-  if (request.action === "scrollToElement") {
-    try {
-      const result = scrollToElement(request.text)
-      sendResponse(result)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error"
-      sendResponse({ success: false, error: message })
-    }
+  if (request.action === "scrollToMessage") {
+    sendResponse(scrollToMessage(request.messageContent))
   }
 
   return true
