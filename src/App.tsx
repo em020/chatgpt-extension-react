@@ -117,6 +117,8 @@ export default function App() {
         }
       } else {
         await new Promise((resolve) => setTimeout(resolve, 100))
+        // Dev mode: domHtml is just used to show the list UI;
+        // matches are intentionally hardcoded and not parsed from mockData.html.
         setDomHtml(mockData.html)
         setExtractedMatches(mockData.matches)
       }
