@@ -1,5 +1,7 @@
 /// <reference types="chrome" />
 
+import { resolveProviderByUrl } from "@/lib/providers"
+
 function withActiveTab(
   sendResponse: (response: unknown) => void,
   callback: (activeTab: chrome.tabs.Tab) => void
@@ -27,6 +29,14 @@ function withActiveTab(
       return
     }
 
+    if (!resolveProviderByUrl(url)) {
+      sendResponse({
+        success: false,
+        error: "This page is not supported yet. Open ChatGPT or Gemini and try again.",
+      })
+      return
+    }
+
     callback(activeTab)
   })
 }
@@ -36,48 +46,16 @@ function sendMessageToTab(
   message: unknown,
   sendResponse: (response: unknown) => void
 ) {
-  chrome.tabs.sendMessage(tabId, message, async (response) => {
-    if (!chrome.runtime.lastError) {
-      sendResponse(response)
-      return
-    }
-
-    const errorMessage = chrome.runtime.lastError.message || ""
-    const needsInjection =
-      errorMessage.includes("Receiving end does not exist") ||
-      errorMessage.includes("Could not establish connection")
-
-    if (!needsInjection) {
+  chrome.tabs.sendMessage(tabId, message, (response) => {
+    if (chrome.runtime.lastError) {
       sendResponse({
         success: false,
-        error: `Failed to communicate with content script: ${errorMessage}`,
+        error: `Failed to communicate with content script: ${chrome.runtime.lastError.message}`,
       })
       return
     }
 
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId },
-        files: ["content-script.js"],
-      })
-
-      chrome.tabs.sendMessage(tabId, message, (retryResponse) => {
-        if (chrome.runtime.lastError) {
-          sendResponse({
-            success: false,
-            error: `Failed to communicate with content script: ${chrome.runtime.lastError.message}`,
-          })
-        } else {
-          sendResponse(retryResponse)
-        }
-      })
-    } catch (error) {
-      const messageText = error instanceof Error ? error.message : "Unknown error"
-      sendResponse({
-        success: false,
-        error: `Failed to inject content script: ${messageText}`,
-      })
-    }
+    sendResponse(response)
   })
 }
 

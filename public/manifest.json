@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "ChatGPT Prompt Navigator",
   "version": "1.0.0",
-  "description": "Capture ChatGPT user prompts from the active tab and jump back to them from the popup.",
-  "permissions": ["activeTab", "scripting"],
+  "description": "Capture user prompts from supported AI chat pages and jump back to them from the popup.",
+  "permissions": ["activeTab"],
   "background": {
     "service_worker": "background.js"
   },
@@ -23,6 +23,16 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": ["content-script.js"]
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }

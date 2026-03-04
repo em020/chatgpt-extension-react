@@ -2,6 +2,7 @@
 
 import {
   type CaptureConversationResponse,
+  type ProviderSummary,
   type ScrollToMessageResponse,
   resolveProviderByUrl,
 } from "@/lib/providers"
@@ -22,7 +23,7 @@ function captureConversation(): CaptureConversationResponse {
       provider: {
         id: provider.id,
         label: provider.label,
-      },
+      } satisfies ProviderSummary,
       messages: provider.extractMessages(document),
     }
   } catch (error) {

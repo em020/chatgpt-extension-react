@@ -166,7 +166,7 @@ export default function App() {
           )}
 
           {(matchCount > 0 || provider) && (
-            <div className="max-h-[calc(600px-100px)] overflow-y-auto bg-background">
+            <div className="max-h-[calc(600px-124px)] overflow-y-auto bg-background">
               <div className="space-y-2 p-2">
                 {matchCount > 0 ? (
                   messages.map((message, index) => (

@@ -5,18 +5,19 @@ import { sharedConfig, rootDir } from "./vite.shared"
 export default defineConfig(
   mergeConfig(sharedConfig, {
     build: {
-      rollupOptions: {
-        input: {
-          popup: resolve(rootDir, "popup.html"),
-        },
-        output: {
-          entryFileNames: "[name].js",
-          chunkFileNames: "[name].js",
-          assetFileNames: "[name].[ext]",
-        },
+      lib: {
+        entry: resolve(rootDir, "src/content-script.ts"),
+        formats: ["iife"],
+        fileName: () => "content-script.js",
+        name: "ChatExtensionContentScript",
       },
       outDir: "dist",
-      emptyOutDir: true,
+      emptyOutDir: false,
+      rollupOptions: {
+        output: {
+          inlineDynamicImports: true,
+        },
+      },
     },
   })
 )
