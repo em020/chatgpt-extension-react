@@ -31,40 +31,62 @@ function withActiveTab(
   })
 }
 
+function sendMessageToTab(
+  tabId: number,
+  message: unknown,
+  sendResponse: (response: unknown) => void
+) {
+  chrome.tabs.sendMessage(tabId, message, async (response) => {
+    if (!chrome.runtime.lastError) {
+      sendResponse(response)
+      return
+    }
+
+    const errorMessage = chrome.runtime.lastError.message || ""
+    const needsInjection =
+      errorMessage.includes("Receiving end does not exist") ||
+      errorMessage.includes("Could not establish connection")
+
+    if (!needsInjection) {
+      sendResponse({
+        success: false,
+        error: `Failed to communicate with content script: ${errorMessage}`,
+      })
+      return
+    }
+
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content-script.js"],
+      })
+
+      chrome.tabs.sendMessage(tabId, message, (retryResponse) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({
+            success: false,
+            error: `Failed to communicate with content script: ${chrome.runtime.lastError.message}`,
+          })
+        } else {
+          sendResponse(retryResponse)
+        }
+      })
+    } catch (error) {
+      const messageText = error instanceof Error ? error.message : "Unknown error"
+      sendResponse({
+        success: false,
+        error: `Failed to inject content script: ${messageText}`,
+      })
+    }
+  })
+}
+
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   void _sender
 
   if (request.action === "captureConversationFromActiveTab") {
     withActiveTab(sendResponse, async (activeTab) => {
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: activeTab.id! },
-          files: ["content-script.js"],
-        })
-
-        setTimeout(() => {
-          chrome.tabs.sendMessage(
-            activeTab.id!,
-            { action: "captureConversation" },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                sendResponse({
-                  success: false,
-                  error: `Failed to communicate with content script: ${chrome.runtime.lastError.message}`,
-                })
-              } else {
-                sendResponse(response)
-              }
-            }
-          )
-        }, 100)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error"
-        sendResponse({
-          success: false,
-          error: `Failed to inject content script: ${message}`,
-        })
-      }
+      sendMessageToTab(activeTab.id!, { action: "captureConversation" }, sendResponse)
     })
 
     return true
@@ -72,38 +94,14 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
   if (request.action === "scrollToMessageOnActiveTab") {
     withActiveTab(sendResponse, async (activeTab) => {
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: activeTab.id! },
-          files: ["content-script.js"],
-        })
-
-        setTimeout(() => {
-          chrome.tabs.sendMessage(
-            activeTab.id!,
-            {
-              action: "scrollToMessage",
-              messageContent: request.messageContent,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                sendResponse({
-                  success: false,
-                  error: `Failed to communicate with content script: ${chrome.runtime.lastError.message}`,
-                })
-              } else {
-                sendResponse(response)
-              }
-            }
-          )
-        }, 100)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error"
-        sendResponse({
-          success: false,
-          error: `Failed to inject content script: ${message}`,
-        })
-      }
+      sendMessageToTab(
+        activeTab.id!,
+        {
+          action: "scrollToMessage",
+          messageContent: request.messageContent,
+        },
+        sendResponse
+      )
     })
 
     return true

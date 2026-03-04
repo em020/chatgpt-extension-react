@@ -1,5 +1,5 @@
 // Keep this as a closed union of supported providers so new integrations are added explicitly.
-export type ProviderId = "chatgpt"
+export type ProviderId = "chatgpt" | "gemini"
 
 export type ConversationMessage = {
   content: string
@@ -34,7 +34,7 @@ export type ProviderAdapter = {
 }
 
 function normalizeText(text: string) {
-  return text.trim()
+  return text.replace(/\s+/g, " ").trim()
 }
 
 function findTextMatchInDocument(document: Document, messageContent: string) {
@@ -88,7 +88,53 @@ const chatGptAdapter: ProviderAdapter = {
   },
 }
 
-const providerAdapters: ProviderAdapter[] = [chatGptAdapter]
+function getGeminiMessageContent(element: Element) {
+  const lineElements = element.querySelectorAll(".query-text-line")
+  const lines = Array.from(lineElements)
+    .map((lineElement) => normalizeText(lineElement.textContent || ""))
+    .filter(Boolean)
+
+  if (lines.length > 0) {
+    return normalizeText(lines.join("\n"))
+  }
+
+  return normalizeText(element.textContent || "")
+}
+
+const geminiAdapter: ProviderAdapter = {
+  id: "gemini",
+  label: "Gemini",
+  matchesUrl: (url) => {
+    try {
+      const hostname = new URL(url).hostname
+      return hostname === "gemini.google.com"
+    } catch {
+      return false
+    }
+  },
+  extractMessages: (document) => {
+    const elements = document.querySelectorAll("user-query .query-text")
+
+    return Array.from(elements)
+      .map((element) => getGeminiMessageContent(element))
+      .filter(Boolean)
+      .map((content) => ({ content }))
+  },
+  findMessageElement: (document, messageContent) => {
+    const expectedText = normalizeText(messageContent)
+    const elements = document.querySelectorAll("user-query .query-text")
+
+    for (const element of elements) {
+      if (getGeminiMessageContent(element) === expectedText) {
+        return element
+      }
+    }
+
+    return findTextMatchInDocument(document, messageContent)
+  },
+}
+
+const providerAdapters: ProviderAdapter[] = [chatGptAdapter, geminiAdapter]
 
 export function resolveProviderByUrl(url: string) {
   return providerAdapters.find((provider) => provider.matchesUrl(url)) || null
