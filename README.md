@@ -1,73 +1,89 @@
-# React + TypeScript + Vite
+# ChatGPT Prompt Navigator (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern Chrome extension built with React and Tailwind CSS that helps you navigate your AI conversations by capturing prompts and allowing quick scrolling back to them.
 
-Currently, two official plugins are available:
+## 🚀 Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**ChatGPT Prompt Navigator** is designed to enhance your workflow when using AI chat interfaces like ChatGPT and Gemini. It automatically extracts your prompts from the current page and provides a clean, searchable list in the extension popup. Click any prompt to smoothly scroll the page back to its original location.
 
-## React Compiler
+### ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Auto-Capture**: Instantly detects and lists all user prompts on the page.
+- **Quick Navigation**: One-click scrolling to find specific messages in long conversations.
+- **Provider Support**: Works seamlessly with:
+  - `chatgpt.com` / `chat.openai.com`
+  - `gemini.google.com`
+- **Modern UI**: Built with React, Tailwind CSS, and Radix UI components for a polished feel.
+- **Development Mode**: Includes mock data support for testing without a browser extension environment.
 
-## Expanding the ESLint configuration
+## 🛠️ Architecture
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The project follows the standard Chrome Extension Manifest V3 architecture with a modern build pipeline:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Popup (React)**: The main user interface for listing and interacting with prompts.
+- **Background (Service Worker)**: Orchestrates message passing between the popup and the active tab.
+- **Content Scripts**: Injected scripts that interact with the AI provider's DOM to extract content and perform navigation.
+- **Provider Adapters**: A flexible system to support multiple AI chat platforms with custom selectors and matching logic.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🏗️ Technical Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Components**: [Radix UI](https://www.radix-ui.com/)
+
+## 📦 Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (latest LTS recommended)
+- [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/chatgpt-extension-react.git
+   cd chatgpt-extension-react
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Run the development server for UI work (mock data enabled):
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Build
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+To build the extension for production:
+```bash
+npm run build
 ```
+The output files will be in the `dist` directory (organized by `popup`, `background`, and `content-script`).
+
+### Loading in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable "Developer mode" (toggle in the top right).
+3. Click "Load unpacked".
+4. Select the `dist` folder generated by the build.
+
+## 🗺️ Visual Guides
+
+### Architectural Diagram
+![Architectural Diagram](./2026-03-25-architectural-diagram.png)
+
+### Conceptual Birdview
+![Conceptual Birdview](./2026-03-25-conceptual-birdview.png)
+
+## 📄 License
+
+MIT
